@@ -157,11 +157,16 @@ export abstract class BaseMonomer extends DrawingEntity {
     return undefined;
   }
 
-  public get firstFreeAttachmentPoint() {
+  public getFreeAttachmentPoint(
+    startAttachmentPoint?: AttachmentPointName,
+  ): AttachmentPointName | undefined {
     const maxAttachmentPointNumber = this.getMaxAttachmentPointNumber();
+    let started = !startAttachmentPoint;
     for (let i = 1; i <= maxAttachmentPointNumber; i++) {
       const attachmentPoint = `R${i}` as AttachmentPointName;
+      if (attachmentPoint === startAttachmentPoint) started = true;
       if (
+        started &&
         this.hasAttachmentPoint(attachmentPoint) &&
         this.attachmentPointsToBonds[attachmentPoint] === null
       ) {
@@ -203,7 +208,7 @@ export abstract class BaseMonomer extends DrawingEntity {
   }
 
   public get hasFreeAttachmentPoint() {
-    return Boolean(this.firstFreeAttachmentPoint);
+    return Boolean(this.getFreeAttachmentPoint());
   }
 
   public isAttachmentPointExistAndFree(attachmentPoint: AttachmentPointName) {
@@ -323,7 +328,7 @@ export abstract class BaseMonomer extends DrawingEntity {
     if (this.chosenSecondAttachmentPointForBond) {
       return this.chosenSecondAttachmentPointForBond;
     }
-    return this.firstFreeAttachmentPoint;
+    return this.getFreeAttachmentPoint();
   }
 
   public hasAttachmentPoint(attachmentPointName: AttachmentPointName) {
@@ -538,7 +543,7 @@ export abstract class BaseMonomer extends DrawingEntity {
       return AttachmentPointName.R1;
     }
 
-    return this.firstFreeAttachmentPoint;
+    return this.getFreeAttachmentPoint();
   }
 
   abstract get SubChainConstructor():
