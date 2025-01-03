@@ -961,7 +961,7 @@ export class DrawingEntitiesManager {
     return command;
   }
 
-  public intendToFinishAttachmenPointBondCreation(
+  public intendToFinishAttachmentPointBondCreation(
     monomer: BaseMonomer,
     bond: PolymerBond,
     attachmentPointName: AttachmentPointName,
