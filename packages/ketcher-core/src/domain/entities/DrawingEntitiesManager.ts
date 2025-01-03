@@ -821,7 +821,7 @@ export class DrawingEntitiesManager {
     );
 
     polymerBond.firstMonomer.removePotentialBonds(true);
-    polymerBond.secondMonomer.removePotentialBonds(true);
+    polymerBond.secondMonomer.resetPotentialBonds(true);
     polymerBond.firstMonomer.setChosenFirstAttachmentPoint(null);
     polymerBond.secondMonomer?.setChosenSecondAttachmentPoint(null);
     polymerBond.moveToLinkedEntities();

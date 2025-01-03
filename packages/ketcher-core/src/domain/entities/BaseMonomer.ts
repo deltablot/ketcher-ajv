@@ -32,9 +32,18 @@ export abstract class BaseMonomer extends DrawingEntity {
   public renderer?: BaseMonomerRenderer | BaseSequenceItemRenderer = undefined;
   public attachmentPointsToBonds: AttachmentPointsToBonds = {};
 
-  public chosenFirstAttachmentPointForBond: AttachmentPointName | null;
+  private _chosenFirstAttachmentPointForBond: AttachmentPointName | null;
+  public get chosenFirstAttachmentPointForBond(): AttachmentPointName | null {
+    return this._chosenFirstAttachmentPointForBond;
+  }
+
+  private _chosenSecondAttachmentPointForBond: AttachmentPointName | null;
+
+  public get chosenSecondAttachmentPointForBond(): AttachmentPointName | null {
+    return this._chosenSecondAttachmentPointForBond;
+  }
+
   public potentialSecondAttachmentPointForBond: AttachmentPointName | null;
-  public chosenSecondAttachmentPointForBond: AttachmentPointName | null;
 
   public potentialAttachmentPointsToBonds: AttachmentPointsToBonds = {};
 
@@ -56,9 +65,9 @@ export abstract class BaseMonomer extends DrawingEntity {
     this.monomerItem.attachmentPoints =
       this.monomerItem.attachmentPoints ||
       this.getMonomerDefinitionAttachmentPoints();
-    this.chosenFirstAttachmentPointForBond = null;
+    this._chosenFirstAttachmentPointForBond = null;
     this.potentialSecondAttachmentPointForBond = null;
-    this.chosenSecondAttachmentPointForBond = null;
+    this._chosenSecondAttachmentPointForBond = null;
   }
 
   public get label() {
@@ -93,13 +102,13 @@ export abstract class BaseMonomer extends DrawingEntity {
   public setChosenFirstAttachmentPoint(
     attachmentPoint: AttachmentPointName | null,
   ) {
-    this.chosenFirstAttachmentPointForBond = attachmentPoint;
+    this._chosenFirstAttachmentPointForBond = attachmentPoint;
   }
 
   public setChosenSecondAttachmentPoint(
     attachmentPoint: AttachmentPointName | null,
   ) {
-    this.chosenSecondAttachmentPointForBond = attachmentPoint;
+    this._chosenSecondAttachmentPointForBond = attachmentPoint;
   }
 
   public setPotentialSecondAttachmentPoint(
@@ -312,10 +321,10 @@ export abstract class BaseMonomer extends DrawingEntity {
     this.unsetBond(attachmentPointName);
   }
 
-  public removePotentialBonds(clearSelectedPoints = false) {
-    if (clearSelectedPoints) {
-      this.chosenFirstAttachmentPointForBond = null;
-      this.chosenSecondAttachmentPointForBond = null;
+  public removePotentialBonds(resetSelectedPoints = false) {
+    if (resetSelectedPoints) {
+      this._chosenFirstAttachmentPointForBond = null;
+      this._chosenSecondAttachmentPointForBond = null;
       this.potentialSecondAttachmentPointForBond = null;
     }
 
