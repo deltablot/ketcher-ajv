@@ -225,7 +225,7 @@ class PolymerBond implements BaseTool {
         );
     } else {
       modelChanges =
-        this.editor.drawingEntitiesManager.intendToStartAttachmenPointBondCreation(
+        this.editor.drawingEntitiesManager.intendToStartAttachmentPointBondCreation(
           renderer.monomer,
           event.attachmentPointName,
         );
