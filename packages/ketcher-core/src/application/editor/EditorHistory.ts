@@ -24,11 +24,14 @@ const HISTORY_SIZE = 32; // put me to options
 export type HistoryOperationType = 'undo' | 'redo';
 
 export class EditorHistory {
+  private logger: Console | undefined = console;
   historyStack: Command[] | [] = [];
   historyPointer = 0;
   editor: CoreEditor | undefined;
 
-  private static _instance;
+  // eslint-disable-next-line no-use-before-define
+  private static _instance: EditorHistory | null;
+
   constructor(editor: CoreEditor) {
     if (EditorHistory._instance) {
       return EditorHistory._instance;
@@ -40,9 +43,17 @@ export class EditorHistory {
     return this;
   }
 
-  update(command: Command, megreWithLatestHistoryCommand?: boolean) {
+  update(command: Command, mergeWithLatestHistoryCommand = false) {
+    this.logger?.debug(
+      `> EditorHistory.update(), start, ` +
+        `command.operations: ${command.operations
+          .map((o) => o.constructor.name)
+          .join(', ')}, ` +
+        `merge: ${mergeWithLatestHistoryCommand}`,
+    );
+
     const latestCommand = this.historyStack[this.historyStack.length - 1];
-    if (megreWithLatestHistoryCommand && latestCommand) {
+    if (mergeWithLatestHistoryCommand && latestCommand) {
       latestCommand.merge(command);
     } else {
       this.historyStack.splice(this.historyPointer, HISTORY_SIZE + 1, command);
@@ -52,9 +63,13 @@ export class EditorHistory {
       this.historyPointer = this.historyStack.length;
     }
     ketcherProvider.getKetcher()?.changeEvent.dispatch();
+
+    this.logger?.debug(`< EditorHistory.update(), end`);
   }
 
   undo() {
+    this.logger?.debug(`> EditorHistory.undo(), start`);
+
     if (this.historyPointer === 0) {
       return;
     }
@@ -63,10 +78,18 @@ export class EditorHistory {
 
     this.historyPointer--;
     const lastCommand = this.historyStack[this.historyPointer];
+    this.logger?.debug(
+      `  EditorHistory.undo(), ` +
+        `lastCommand.operations: ${lastCommand.operations
+          .map((o) => o.constructor.name)
+          .join(', ')}, `,
+    );
     lastCommand.invert(this.editor.renderersContainer);
     const turnOffSelectionCommand =
       this.editor?.drawingEntitiesManager.unselectAllDrawingEntities();
     this.editor?.renderersContainer.update(turnOffSelectionCommand);
+
+    this.logger?.debug(`< EditorHistory.undo(), end`);
   }
 
   redo() {

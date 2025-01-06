@@ -47,22 +47,57 @@ export enum MACROMOLECULES_BOND_TYPES {
 }
 
 class PolymerBond implements BaseTool {
+  private logger: Console | undefined = console;
+
+  private readonly bondType: MACROMOLECULES_BOND_TYPES;
   private bondRenderer?: FlexModeOrSnakeModePolymerBondRenderer;
   private isBondConnectionModalOpen = false;
   private history: EditorHistory;
-  private bondType: MACROMOLECULES_BOND_TYPES;
+  private _prepCommand: Command = new Command();
 
-  constructor(private editor: CoreEditor, options: { toolName: ToolName }) {
-    this.editor = editor;
+  constructor(
+    private readonly editor: CoreEditor,
+    options: { toolName: ToolName },
+  ) {
     this.history = new EditorHistory(this.editor);
     this.bondType =
       options.toolName === ToolName.bondSingle
         ? MACROMOLECULES_BOND_TYPES.SINGLE
         : MACROMOLECULES_BOND_TYPES.HYDROGEN;
+    this.editor.events.cancelBondCreationViaModal.add(
+      (_monomer: BaseMonomer) => {
+        this.rollbackCommand();
+      },
+    );
   }
 
   get isHydrogenBond() {
     return this.bondType === MACROMOLECULES_BOND_TYPES.HYDROGEN;
+  }
+
+  private pushCommand(prepCommand?: Command): void {
+    this.logger?.debug('PolymerBond.pushCommand(), start');
+
+    if (!prepCommand) return;
+    this.editor.renderersContainer.update(prepCommand);
+    this._prepCommand.merge(prepCommand);
+  }
+
+  private commitCommand(mainCommand: Command): void {
+    this.logger?.debug('PolymerBond.commitCommand(), start');
+
+    this.editor.renderersContainer.update(mainCommand);
+    this._prepCommand.merge(mainCommand);
+    const historyCommand: Command = this._prepCommand;
+    this._prepCommand = new Command();
+    this.history.update(historyCommand);
+  }
+
+  private rollbackCommand(): void {
+    this.logger?.debug('PolymerBond.rollbackCommand(), start');
+
+    this._prepCommand.invert(this.editor.renderersContainer);
+    this._prepCommand = new Command();
   }
 
   public mouseDownAttachmentPoint(event) {
@@ -75,8 +110,10 @@ class PolymerBond implements BaseTool {
       selectedRenderer instanceof AttachmentPoint &&
       !selectedRenderer.monomer.isAttachmentPointUsed(event.attachmentPointName)
     ) {
-      selectedRenderer.monomer.setChosenFirstAttachmentPoint(
-        event.attachmentPointName,
+      this.pushCommand(
+        selectedRenderer.monomer.setChosenFirstAttachmentPoint(
+          event.attachmentPointName,
+        ),
       );
     }
   }
@@ -101,18 +138,20 @@ class PolymerBond implements BaseTool {
       selectedRenderer instanceof BaseMonomerRenderer ||
       selectedRenderer instanceof AttachmentPoint
     ) {
-      const startAttachmentPoint =
-        selectedRenderer.monomer.startBondAttachmentPoint;
+      const monomer = selectedRenderer.monomer;
+      const startAttachmentPoint = monomer.getStartBondAttachmentPoint(
+        this.pushCommand.bind(this),
+      );
 
-      if (!startAttachmentPoint && !this.isHydrogenBond) {
-        this.editor.events.error.dispatch(
-          "Selected monomer doesn't have any free attachment points",
-        );
-        return;
-      }
+      if (!startAttachmentPoint) {
+        this.pushCommand(monomer.setChosenFirstAttachmentPoint(null));
 
-      if (startAttachmentPoint) {
-        this.removePreviouslyCreatedBond(startAttachmentPoint);
+        if (!monomer.getFreeAttachmentPoint() && !this.isHydrogenBond) {
+          this.editor.events.error.dispatch(
+            "Selected monomer doesn't have any free attachment points",
+          );
+          return;
+        }
       }
 
       const { polymerBond, command: modelChanges } =
@@ -334,21 +373,6 @@ class PolymerBond implements BaseTool {
     }
   }
 
-  private removePreviouslyCreatedBond(attachmentPoint: AttachmentPointName) {
-    this.editor.drawingEntitiesManager.monomerToAtomBonds.forEach(
-      (monomerToAtomBond) => {
-        const bond =
-          monomerToAtomBond.monomer.attachmentPointsToBonds[attachmentPoint];
-
-        if (bond?.id === monomerToAtomBond.id) {
-          this.editor.renderersContainer.deleteMonomerToAtomBond(
-            monomerToAtomBond,
-          );
-        }
-      },
-    );
-  }
-
   private finishBondCreation(secondMonomer: BaseMonomer) {
     assert(this.bondRenderer);
 
@@ -414,8 +438,9 @@ class PolymerBond implements BaseTool {
     }
 
     const modelChanges = this.removeBond();
-
     this.editor.renderersContainer.update(modelChanges);
+
+    this.rollbackCommand();
   }
 
   public mouseUpMonomer(event) {
@@ -491,15 +516,13 @@ class PolymerBond implements BaseTool {
     }
 
     // Establish new Monomer to Atom Bond
-    const modelChanges =
+    this.commitCommand(
       this.editor.drawingEntitiesManager.addMonomerToAtomBond(
         monomer,
         atomRenderer.atom,
         attachmentPoint,
-      );
-
-    this.editor.renderersContainer.update(modelChanges);
-    this.history.update(modelChanges);
+      ),
+    );
   }
 
   public handleBondCreation = (payload: {

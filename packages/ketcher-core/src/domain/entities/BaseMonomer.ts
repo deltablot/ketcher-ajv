@@ -24,11 +24,32 @@ import { BaseSequenceItemRenderer } from 'application/render/renderers/sequence/
 import { compact, isNumber, values } from 'lodash';
 import { MonomerToAtomBond } from 'domain/entities/MonomerToAtomBond';
 import { HydrogenBond } from 'domain/entities/HydrogenBond';
+import { Operation } from 'domain/entities/Operation';
+import { RenderersManager } from 'application/render/renderers/RenderersManager';
+import { Command } from 'domain/entities/Command';
 
 export type BaseMonomerConfig = DrawingEntityConfig;
 export const HYDROGEN_BOND_ATTACHMENT_POINT = 'hydrogen';
 
+export class MonomerSetChosenFirstAttachmentPointOperation
+  implements Operation
+{
+  constructor(
+    private setChangeModel: () => void,
+    private resetChangeModel: () => void,
+  ) {}
+
+  public execute(_renderersManager: RenderersManager): void {
+    this.setChangeModel();
+  }
+
+  public invert(): void {
+    this.resetChangeModel();
+  }
+}
+
 export abstract class BaseMonomer extends DrawingEntity {
+  protected logger: Console | undefined = console;
   public renderer?: BaseMonomerRenderer | BaseSequenceItemRenderer = undefined;
   public attachmentPointsToBonds: AttachmentPointsToBonds = {};
 
@@ -101,8 +122,26 @@ export abstract class BaseMonomer extends DrawingEntity {
 
   public setChosenFirstAttachmentPoint(
     attachmentPoint: AttachmentPointName | null,
-  ) {
-    this._chosenFirstAttachmentPointForBond = attachmentPoint;
+  ): Command {
+    this.logger?.debug(
+      `BaseMonomer.setChosenFirstAttachmentPoint(), start,` +
+        ` attachmentPoint: ${attachmentPoint}`,
+    );
+    const current = this._chosenFirstAttachmentPointForBond;
+
+    const command = new Command();
+    command.addOperation(
+      new MonomerSetChosenFirstAttachmentPointOperation(
+        () => {
+          this._chosenFirstAttachmentPointForBond = attachmentPoint;
+        },
+        () => {
+          this._chosenFirstAttachmentPointForBond = current;
+        },
+      ),
+    );
+    this.logger?.debug(`BaseMonomer.setChosenFirstAttachmentPoint(), end`);
+    return command;
   }
 
   public setChosenSecondAttachmentPoint(
@@ -540,9 +579,28 @@ export abstract class BaseMonomer extends DrawingEntity {
     return attachmentPointNameToBond;
   }
 
-  public get startBondAttachmentPoint(): AttachmentPointName | undefined {
+  public getStartBondAttachmentPoint(
+    pushCommand: (command: Command) => void,
+  ): AttachmentPointName | undefined {
     if (this.chosenFirstAttachmentPointForBond) {
-      return this.chosenFirstAttachmentPointForBond;
+      const existingBond =
+        this.attachmentPointsToBonds[this.chosenFirstAttachmentPointForBond] ??
+        null;
+      if (existingBond === null) {
+        return this.chosenFirstAttachmentPointForBond;
+      }
+
+      const resAttachmentPoint = this.getFreeAttachmentPoint(
+        this.chosenFirstAttachmentPointForBond,
+      );
+      if (
+        resAttachmentPoint !== undefined &&
+        resAttachmentPoint !== this.chosenFirstAttachmentPointForBond
+      ) {
+        pushCommand(this.setChosenFirstAttachmentPoint(resAttachmentPoint));
+      }
+
+      return resAttachmentPoint;
     }
     if (this.attachmentPointsToBonds.R2 === null) {
       return AttachmentPointName.R2;
