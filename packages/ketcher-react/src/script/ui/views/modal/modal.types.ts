@@ -14,11 +14,11 @@
  * limitations under the License.
  ***************************************************************************/
 
-interface BaseProps {
+interface BaseProps<TResult = Record<string, any>> {
   className: string;
   formState: {
     errors: Record<string, string>;
-    result: Record<string, any>;
+    result: TResult;
     valid: boolean;
   };
 }

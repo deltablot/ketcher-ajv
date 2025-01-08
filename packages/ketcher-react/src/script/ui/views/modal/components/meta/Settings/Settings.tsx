@@ -44,8 +44,12 @@ import { Icon } from 'components';
 import { ACS_STYLE_DEFAULT_SETTINGS } from 'src/constants';
 import { onAction } from 'src/script/ui/state/shared';
 
-interface SettingsProps extends BaseProps {
-  initState: any;
+interface SettingsPropsType {
+  reactionComponentMarginSize: number;
+}
+
+interface SettingsProps extends BaseProps<SettingsPropsType> {
+  initState: SettingsPropsType;
   appOpts: {
     version: string;
     buildDate: string;
@@ -351,7 +355,10 @@ const SettingsDialog = (props: Props) => {
   return (
     <Dialog
       className={classes.settings}
-      result={() => [formState.result, initState]}
+      result={(): [SettingsPropsType, SettingsPropsType] => [
+        formState.result,
+        initState,
+      ]}
       valid={() => formState.valid}
       params={prop}
       buttonsNameMap={{ OK: 'Apply' }}
@@ -397,7 +404,7 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
   },
   onReset: () => dispatch(setDefaultSettings()),
   onOk: (res) => {
-    const [result, initState] = res;
+    const [result, initState]: [SettingsPropsType, SettingsPropsType] = res;
 
     dispatch(saveSettings(result));
     ownProps.onOk(result);

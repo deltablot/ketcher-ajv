@@ -132,8 +132,8 @@ class Editor implements KetcherEditor {
   render: Render;
   _selection: Selection | null;
   _tool: Tool | null;
-  historyStack: any;
-  historyPtr: any;
+  historyStack: Action[];
+  historyPtr: number;
   errorHandler: ((message: string) => void) | null;
   highlights: Highlighter;
   hoverIcon: HoverIcon;
@@ -529,7 +529,7 @@ class Editor implements KetcherEditor {
     });
   }
 
-  update(action: Action | true, ignoreHistory?: boolean) {
+  update(action: Action | true, ignoreHistory = false) {
     setFunctionalGroupsTooltip({
       editor: this,
       isShow: false,
@@ -551,7 +551,7 @@ class Editor implements KetcherEditor {
     }
   }
 
-  historySize() {
+  historySize(): { readonly undo: number; readonly redo: number } {
     return {
       undo: this.historyPtr,
       redo: this.historyStack.length - this.historyPtr,

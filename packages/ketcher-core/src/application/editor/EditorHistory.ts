@@ -18,6 +18,8 @@ import { Command } from 'domain/entities/Command';
 import { CoreEditor } from './Editor';
 import assert from 'assert';
 import { ketcherProvider } from 'application/utils';
+import { KetcherLogger } from 'utilities';
+
 const HISTORY_SIZE = 32; // put me to options
 
 export type HistoryOperationType = 'undo' | 'redo';
@@ -28,6 +30,7 @@ export class EditorHistory {
   editor: CoreEditor | undefined;
 
   private static _instance;
+
   constructor(editor: CoreEditor) {
     if (EditorHistory._instance) {
       return EditorHistory._instance;
@@ -39,9 +42,11 @@ export class EditorHistory {
     return this;
   }
 
-  update(command: Command, megreWithLatestHistoryCommand?: boolean) {
+  update(command: Command, mergeWithLatestHistoryCommand?: boolean) {
+    KetcherLogger.log('EditorHistory.update(), start', command);
+
     const latestCommand = this.historyStack[this.historyStack.length - 1];
-    if (megreWithLatestHistoryCommand && latestCommand) {
+    if (mergeWithLatestHistoryCommand && latestCommand) {
       latestCommand.merge(command);
     } else {
       this.historyStack.splice(this.historyPointer, HISTORY_SIZE + 1, command);
@@ -51,9 +56,13 @@ export class EditorHistory {
       this.historyPointer = this.historyStack.length;
     }
     ketcherProvider.getKetcher()?.changeEvent.dispatch();
+
+    KetcherLogger.log('EditorHistory.update(), end');
   }
 
   undo() {
+    KetcherLogger.log('EditorHistory.undo(), start');
+
     if (this.historyPointer === 0) {
       return;
     }
@@ -66,9 +75,13 @@ export class EditorHistory {
     const turnOffSelectionCommand =
       this.editor?.drawingEntitiesManager.unselectAllDrawingEntities();
     this.editor?.renderersContainer.update(turnOffSelectionCommand);
+
+    KetcherLogger.log('EditorHistory.undo(), end');
   }
 
   redo() {
+    KetcherLogger.log('EditorHistory.redo(), start');
+
     if (this.historyPointer === this.historyStack.length) {
       return;
     }
@@ -78,6 +91,8 @@ export class EditorHistory {
     const lastCommand = this.historyStack[this.historyPointer];
     lastCommand.execute(this.editor.renderersContainer);
     this.historyPointer++;
+
+    KetcherLogger.log('EditorHistory.redo(), end');
   }
 
   destroy() {

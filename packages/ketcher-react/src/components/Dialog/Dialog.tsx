@@ -95,11 +95,11 @@ export const Dialog: FC<PropsWithChildren & Props> = (props) => {
     };
   }, [focusable]);
 
-  const isButtonOk = (button) => {
+  const isButtonOk = (button: string) => {
     return button === 'OK' || button === 'Save';
   };
 
-  const exit = (mode) => {
+  const exit = (mode: string) => {
     const key = isButtonOk(mode) ? 'onOk' : 'onCancel';
     if (params && key in params && (key !== 'onOk' || valid())) {
       params[key](result());
