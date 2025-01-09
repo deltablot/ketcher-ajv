@@ -163,7 +163,7 @@ export class AtomRenderer extends BaseRenderer {
     const isAtomInMiddleOfChain = (atomNeighborsHalfEdges?.length || 0) >= 2;
     const hasCharge = this.atom.hasCharge;
     const hasRadical = this.atom.hasRadical;
-    const hasAlias = this.atom.properties.alias;
+    const hasAlias = this.atom.hasAlias;
     const hasExplicitValence = this.atom.hasExplicitValence;
     const hasExplicitIsotope = this.atom.hasExplicitIsotope;
 
@@ -263,24 +263,24 @@ export class AtomRenderer extends BaseRenderer {
       textElement
         ?.append('tspan')
         .attr('dy', this.atom.hasExplicitIsotope ? 4 : 0)
-        .text(this.atom.properties.alias || this.atom.label);
+        .text(this.labelText);
     }
 
-    if (hydrogenAmount > 0) {
+    if (!this.atom.hasAlias && hydrogenAmount > 0) {
       textElement
         ?.append('tspan')
         .attr('dy', this.atom.hasExplicitIsotope ? 4 : 0)
         .text('H');
-    }
 
-    if (hydrogenAmount > 1) {
-      textElement?.append('tspan').text(hydrogenAmount).attr('dy', 3);
+      if (hydrogenAmount > 1) {
+        textElement?.append('tspan').text(hydrogenAmount).attr('dy', 3);
+      }
     }
 
     if (shouldHydrogenBeOnLeft) {
       textElement
         ?.append('tspan')
-        .text(this.atom.properties.alias || this.atom.label)
+        .text(this.labelText)
         .attr('dy', hydrogenAmount > 1 ? -3 : 0);
     }
 

@@ -86,6 +86,10 @@ export class Atom extends DrawingEntity {
     return connectionsAmount;
   }
 
+  public get hasAlias() {
+    return Boolean(this.properties.alias);
+  }
+
   public get hasRadical() {
     return isNumber(this.properties.radical) && this.properties.radical !== 0;
   }
