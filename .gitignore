@@ -35,6 +35,9 @@ yarn-error.log*
 .vscode
 /.idea
 
+# ajv validation file generated with npm run ajv
+/packages/ketcher-core/src/domain/serializers/ket/validate.js
+
 .pnp.*
 .yarn/*
 tests/test-data/KET/Nucleotide-Templates/01 - (R1) - Left only.ket
