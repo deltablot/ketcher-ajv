@@ -36,7 +36,7 @@ yarn-error.log*
 /.idea
 
 # ajv validation file generated with npm run ajv
-/packages/ketcher-core/src/domain/serializers/ket/validate.js
+/packages/ketcher-core/src/domain/serializers/ket/compiledSchema.js
 
 .pnp.*
 .yarn/*

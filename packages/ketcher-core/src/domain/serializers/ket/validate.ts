@@ -14,10 +14,10 @@
  * limitations under the License.
  ***************************************************************************/
 
-import { validate as validateKet } from './validate';
+import compiledSchema from './compiledSchema';
 import { validateMultitailArrows } from './multitailArrowsValidator';
 
 export function validate(ket: any): boolean {
-  const result = validateKet(ket);
+  const result = compiledSchema(ket);
   return result ? validateMultitailArrows(ket) : result;
 }
